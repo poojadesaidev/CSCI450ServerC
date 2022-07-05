@@ -8,6 +8,7 @@
 #include <string>
 #include <sstream>
 #include <fstream>
+#include <list>
 
 using namespace std;
 
@@ -17,6 +18,29 @@ using namespace std;
 #define IPADDR "127.0.0.1"
 #define FILENAME "block3.txt"
 #define SERVERNAME "ServerC"
+
+// create class for creating a sorted list of structs for TXLIST
+struct Transaction
+{
+  string id;
+  string sender;
+  string rec;
+  string amount;
+  Transaction() {}
+  Transaction(string iid, string isender, string irec, string iamount)
+  {
+    id = iid;
+    sender = isender;
+    rec = irec;
+    amount = iamount;
+  }
+
+  // overload the < operator which will be used by the sort method of list
+  bool operator<(const Transaction &transObj) const
+  {
+    return id < transObj.id;
+  }
+};
 
 string encode(string originalString)
 {
@@ -245,6 +269,45 @@ string readFileToGetMaxSerialNum()
   return to_string(maxTrns);
 }
 
+string readAllTransactions()
+{
+  string singleLine;
+  ifstream block1(FILENAME);
+
+  list<Transaction> allTrans;
+
+  while (getline(block1, singleLine))
+  {
+    if (!singleLine.empty())
+    {
+      istringstream stringStream(singleLine);
+      Transaction t = Transaction();
+
+      stringStream >> t.id;
+      stringStream >> t.sender;
+      stringStream >> t.rec;
+      stringStream >> t.amount;
+      allTrans.push_back(t);
+    }
+  }
+  block1.close();
+  if (allTrans.empty())
+  {
+    return "empty";
+  }
+
+  // sort all transactions by transaction id
+  allTrans.sort();
+
+  string returnString = "";
+  for (Transaction t : allTrans)
+  {
+    returnString = returnString + t.id + " " + t.sender + " " + t.rec + " " + t.amount + "\n";
+  }
+
+  return returnString;
+}
+
 string checkWallet(string request)
 {
   istringstream stringStream(request);
@@ -273,6 +336,11 @@ string logTransaction(string request)
 string getMaxSerialNum()
 {
   return readFileToGetMaxSerialNum();
+}
+
+string transactionList()
+{
+  return readAllTransactions();
 }
 
 int main()
@@ -340,7 +408,7 @@ int main()
     else if (serviceRequested.compare("list") == 0)
     {
       // List Transactions
-      response = "TODO";
+      response = transactionList();
     }
     else
     {
